@@ -22,7 +22,7 @@
       </p>
     </div>
     <!-- 登录按钮 -->
-    <button class="login_btn">登陆</button>
+    <button class="login_btn" :disabled="isClick" @click="login">登陆</button>
   </div>
 </template>
 
@@ -42,19 +42,54 @@ export default {
       disabled: false
     };
   },
+  computed: {
+    isClick() {
+      if (!this.phone || !this.verifyCode) return true;
+      else return false;
+    }
+  },
   methods: {
+    //   登录
+    login() {
+      // 清空错误提醒
+      this.errors = {};
+      // 发起请求
+      this.$axios
+        .post("/api/posts/sms_back", {
+          phone: this.phone,
+          code: this.verifyCode
+        })
+        .then(res => {
+          console.log(res);
+          if (res.status == 200) {
+            // 发令牌
+            localStorage.setItem("ele_login", true);
+            // 跳转至首页
+            this.$router.push("/");
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          this.errors = {
+            code: err.response.data.msg
+          };
+        });
+    },
+    // 获取验证码
     getVerifyCode() {
       if (this.validatePhone()) {
         // 校验
         this.validateBtn();
         // 发送网络请求
-        this.$axios.post('/api/posts/sms_send',{
-            tpl_id:'136729',
-            key:'795be723dd9e88c3ea98e2b6713ab795',
-            phone:this.phone
-        }).then(res=>{
+        this.$axios
+          .post("/api/posts/sms_send", {
+            tpl_id: "136729",
+            key: "795be723dd9e88c3ea98e2b6713ab795",
+            phone: this.phone
+          })
+          .then(res => {
             console.log(res);
-        })
+          });
       }
     },
     validatePhone() {
@@ -92,7 +127,7 @@ export default {
 };
 </script>
 
-<style lang='scss'>
+<style lang='scss' scoped>
 .login {
   width: 100%;
   height: 100%;
@@ -124,7 +159,12 @@ export default {
     outline: none;
     border-radius: 5px;
     letter-spacing: 5px;
-    background-color: #4dc86f;
+    background-color: #98e165;
+  }
+
+  .login_btn[disabled] {
+    // background-color: #98e165;
+    opacity: 0.8;
   }
 }
 </style>
